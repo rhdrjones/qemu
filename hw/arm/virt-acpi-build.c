@@ -821,12 +821,6 @@ static void virt_acpi_build_update(void *build_opaque)
     acpi_build_tables_cleanup(&tables, true);
 }
 
-static void virt_acpi_build_reset(void *build_opaque)
-{
-    AcpiBuildState *build_state = build_opaque;
-    build_state->patched = false;
-}
-
 static MemoryRegion *acpi_add_rom_blob(AcpiBuildState *build_state,
                                        GArray *blob, const char *name,
                                        uint64_t max_size)
@@ -882,8 +876,8 @@ void virt_acpi_setup(VirtMachineState *vms)
     build_state->rsdp_mr = acpi_add_rom_blob(build_state, tables.rsdp,
                                               ACPI_BUILD_RSDP_FILE, 0);
 
-    qemu_register_reset(virt_acpi_build_reset, build_state);
-    virt_acpi_build_reset(build_state);
+    qemu_register_reset(acpi_build_reset, build_state);
+    acpi_build_reset(build_state);
     vmstate_register(NULL, 0, &vmstate_virt_acpi_build, build_state);
 
     /* Cleanup tables but don't free the memory: we track it

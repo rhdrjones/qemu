@@ -2782,12 +2782,6 @@ static void acpi_build_update(void *build_opaque)
     acpi_build_tables_cleanup(&tables, true);
 }
 
-static void acpi_build_reset(void *build_opaque)
-{
-    AcpiBuildState *build_state = build_opaque;
-    build_state->patched = false;
-}
-
 static MemoryRegion *acpi_add_rom_blob(AcpiBuildState *build_state,
                                        GArray *blob, const char *name,
                                        uint64_t max_size)
