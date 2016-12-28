@@ -24,6 +24,8 @@
 #include "hw/acpi/aml-build.h"
 #include "qemu/bswap.h"
 #include "qemu/bitops.h"
+#include "exec/memory.h"
+#include "qapi/error.h"
 
 static GArray *build_alloc_array(void)
 {
@@ -1574,6 +1576,18 @@ void acpi_build_reset(void *build_opaque)
 {
     AcpiBuildState *build_state = build_opaque;
     build_state->patched = false;
+}
+
+void acpi_ram_update(MemoryRegion *mr, GArray *data)
+{
+    uint32_t size = acpi_data_len(data);
+
+    /* Make sure RAM size is correct - in case it got changed
+     * e.g. by migration */
+    memory_region_ram_resize(mr, size, &error_abort);
+
+    memcpy(memory_region_get_ram_ptr(mr), data->data, size);
+    memory_region_set_dirty(mr, 0, size);
 }
 
 /* Build rsdt table */

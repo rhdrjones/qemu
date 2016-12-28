@@ -787,18 +787,6 @@ void virt_acpi_build(VirtMachineState *vms, AcpiBuildTables *tables)
     g_array_free(table_offsets, true);
 }
 
-static void acpi_ram_update(MemoryRegion *mr, GArray *data)
-{
-    uint32_t size = acpi_data_len(data);
-
-    /* Make sure RAM size is correct - in case it got changed
-     * e.g. by migration */
-    memory_region_ram_resize(mr, size, &error_abort);
-
-    memcpy(memory_region_get_ram_ptr(mr), data->data, size);
-    memory_region_set_dirty(mr, 0, size);
-}
-
 static void virt_acpi_build_update(void *build_opaque)
 {
     AcpiBuildState *build_state = build_opaque;
