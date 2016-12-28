@@ -367,6 +367,16 @@ Aml *aml_sizeof(Aml *arg);
 Aml *aml_concatenate(Aml *source1, Aml *source2, Aml *target);
 Aml *aml_object_type(Aml *object);
 
+typedef struct AcpiBuildState {
+    /* Copy of table in RAM (for patching). */
+    MemoryRegion *table_mr;
+    MemoryRegion *rsdp_mr;
+    MemoryRegion *linker_mr;
+    /* Is table patched? */
+    bool patched;
+    void *rsdp;
+} AcpiBuildState;
+
 void build_append_int_noprefix(GArray *table, uint64_t value, int size);
 void
 build_header(BIOSLinker *linker, GArray *table_data,

@@ -2562,17 +2562,6 @@ build_rsdp(GArray *rsdp_table, BIOSLinker *linker, unsigned rsdt_tbl_offset)
     return rsdp_table;
 }
 
-typedef
-struct AcpiBuildState {
-    /* Copy of table in RAM (for patching). */
-    MemoryRegion *table_mr;
-    /* Is table patched? */
-    uint8_t patched;
-    void *rsdp;
-    MemoryRegion *rsdp_mr;
-    MemoryRegion *linker_mr;
-} AcpiBuildState;
-
 static bool acpi_get_mcfg(AcpiMcfgInfo *mcfg)
 {
     Object *pci_host;
@@ -2775,7 +2764,7 @@ static void acpi_build_update(void *build_opaque)
     if (!build_state || build_state->patched) {
         return;
     }
-    build_state->patched = 1;
+    build_state->patched = true;
 
     acpi_build_tables_init(&tables);
 
@@ -2796,7 +2785,7 @@ static void acpi_build_update(void *build_opaque)
 static void acpi_build_reset(void *build_opaque)
 {
     AcpiBuildState *build_state = build_opaque;
-    build_state->patched = 0;
+    build_state->patched = false;
 }
 
 static MemoryRegion *acpi_add_rom_blob(AcpiBuildState *build_state,
@@ -2812,7 +2801,7 @@ static const VMStateDescription vmstate_acpi_build = {
     .version_id = 1,
     .minimum_version_id = 1,
     .fields = (VMStateField[]) {
-        VMSTATE_UINT8(patched, AcpiBuildState),
+        VMSTATE_BOOL(patched, AcpiBuildState),
         VMSTATE_END_OF_LIST()
     },
 };
