@@ -1754,6 +1754,61 @@ void build_slit(GArray *table_data, BIOSLinker *linker, MachineState *ms)
                  table_data->len - slit_start, 1, NULL, NULL);
 }
 
+/*
+ * ACPI 6.2: 5.2.29.1 Processor hierarchy node structure (Type 0)
+ */
+static void build_processor_hierarchy_node(GArray *tbl, uint32_t flags,
+                                           uint32_t parent, uint32_t id)
+{
+    build_append_byte(tbl, 0);  /* Type 0 - processor */
+    build_append_byte(tbl, 20); /* Length, no private resources */
+    build_append_int_noprefix(tbl, 0, 2);           /* Reserved */
+    build_append_int_noprefix(tbl, flags, 4);          /* Flags */
+    build_append_int_noprefix(tbl, parent, 4);        /* Parent */
+    build_append_int_noprefix(tbl, id, 4); /* ACPI processor ID */
+    /* Number of private resources */
+    build_append_int_noprefix(tbl, 0, 4);
+}
+
+/*
+ * ACPI 6.2: 5.2.29 Processor Properties Topology Table (PPTT)
+ */
+void build_pptt(GArray *table_data, BIOSLinker *linker, MachineState *ms)
+{
+    int pptt_start = table_data->len;
+    int uid = 0, socket;
+
+    acpi_data_push(table_data, sizeof(AcpiTableHeader));
+
+    for (socket = 0; socket < ms->smp.sockets; socket++) {
+        uint32_t socket_offset = table_data->len - pptt_start;
+        int core;
+
+        build_processor_hierarchy_node(table_data, 1, 0, socket);
+
+        for (core = 0; core < ms->smp.cores; core++) {
+            uint32_t core_offset = table_data->len - pptt_start;
+            int thread;
+
+            if (ms->smp.threads > 1) {
+                build_processor_hierarchy_node(table_data, 0,
+                                               socket_offset, core);
+                for (thread = 0; thread < ms->smp.threads; thread++) {
+                    build_processor_hierarchy_node(table_data, 2,
+                                                   core_offset, uid++);
+                }
+             } else {
+                build_processor_hierarchy_node(table_data, 2,
+                                               socket_offset, uid++);
+             }
+        }
+    }
+
+    build_header(linker, table_data,
+                 (void *)(table_data->data + pptt_start), "PPTT",
+                 table_data->len - pptt_start, 1, NULL, NULL);
+}
+
 /* build rev1/rev3/rev5.1 FADT */
 void build_fadt(GArray *tbl, BIOSLinker *linker, const AcpiFadtData *f,
                 const char *oem_id, const char *oem_table_id)
